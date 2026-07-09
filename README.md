@@ -8,7 +8,7 @@ Reconstruction by **[Jetha Chan](https://x.com/jetha)** (@jetha) driving **[Grok
 **Moth designs:** Wolfie Davis  
 **Reconstruction:** Jetha Chan (@jetha) · Grok 4.5  
 
-**Loop:** cocoon → moth 1 → moth 2 → full noisy center-to-edge wipe
+**Loop:** cocoon → mid (wings) → moth → full noisy center-to-edge wipe (moth design rotates)
 
 > shapes via 2D SDFs · color blend for pixels on/off · per pixel: position + moth + time + noise  
 > — [Abby’s breakdown](https://x.com/DubThinkDev/status/2074987002307744255)

@@ -131,18 +131,18 @@ float distToShape(int s, int gx, int gy) {
 // ---------------------------------------------------------------------------
 // Timeline — pure function of iTime (no JS stage machine)
 // ---------------------------------------------------------------------------
-// Cycle:
-//   form cocoon → hold → morph moth1 → hold → morph moth2 → hold
-//   → full noisy wipe (center → grid edge, clears everything)
-// Wave radius advances at WAVE_SPEED for form/morph/wipe.
+// Cycle (matches footage stages):
+//   form cocoon → hold → morph mid (wings) → hold → morph moth → hold
+//   → full noisy wipe (center → grid edge)
+// Moth design rotates A→B→C→D each cycle.
 
 struct Phase {
   int   shapeFrom;
   int   shapeTo;
   float waveR;     // current wave radius in cell units
-  float form;      // 1 = form/morph (arrive center→out), 0 = dissolve-style clear
+  float form;      // 1 = form/morph (arrive center→out), 0 = clear
   float hold;      // 1 = fully held
-  float fullWipe;  // 1 = noisy full-grid wipe (not silhouette-masked)
+  float fullWipe;  // 1 = noisy full-grid wipe
   float waveOn;    // 1 if lime wave is active
 };
 
@@ -156,95 +156,83 @@ Phase timeline(float t) {
   p.fullWipe  = 0.0;
   p.waveOn    = 0.0;
 
-  // timings (seconds)
-  const float T_FORM_COC  = 1.20;
-  const float T_HOLD_COC  = 1.25;
-  const float T_MORPH_M1  = 1.55;
-  const float T_HOLD_M1   = 1.15;
-  const float T_MORPH_M2  = 1.55;
-  const float T_HOLD_M2   = 1.20;
-  const float T_WIPE      = 2.50; // full grid wipe to corner (~14.1 / 6 ≈ 2.35)
-  const float T_EMPTY     = 0.35;
+  const float T_FORM_COC = 1.15;
+  const float T_HOLD_COC = 1.35;
+  const float T_MORPH_MID = 1.40;
+  const float T_HOLD_MID  = 1.20;
+  const float T_MORPH_MOTH = 1.55;
+  const float T_HOLD_MOTH  = 1.40;
+  const float T_WIPE  = 2.45;
+  const float T_EMPTY = 0.30;
   const float TC =
-      T_FORM_COC + T_HOLD_COC + T_MORPH_M1 + T_HOLD_M1 +
-      T_MORPH_M2 + T_HOLD_M2 + T_WIPE + T_EMPTY;
+      T_FORM_COC + T_HOLD_COC + T_MORPH_MID + T_HOLD_MID +
+      T_MORPH_MOTH + T_HOLD_MOTH + T_WIPE + T_EMPTY;
 
-  // Segment ends
   float S0 = T_FORM_COC;
   float S1 = S0 + T_HOLD_COC;
-  float S2 = S1 + T_MORPH_M1;
-  float S3 = S2 + T_HOLD_M1;
-  float S4 = S3 + T_MORPH_M2;
-  float S5 = S4 + T_HOLD_M2;
+  float S2 = S1 + T_MORPH_MID;
+  float S3 = S2 + T_HOLD_MID;
+  float S4 = S3 + T_MORPH_MOTH;
+  float S5 = S4 + T_HOLD_MOTH;
   float S6 = S5 + T_WIPE;
-  // S7 = TC empty
 
   float gt = max(t, 0.0);
   int cycle = int(floor(gt / TC));
   float lt = gt - float(cycle) * TC;
+  int moth = 2 + (cycle - (cycle / 4) * 4); // 2..5 = moths A–D
 
-  // Two moths per cycle, rotating through A–D
-  int mPair = cycle - (cycle / 2) * 2; // cycle % 2
-  int moth1 = 2 + (mPair * 2);         // 2 or 4  (A or C)
-  int moth2 = moth1 + 1;               // 3 or 5  (B or D)
-
-  // 0 form cocoon
+  // form cocoon
   if (lt < S0) {
-    float u = lt;
     p.shapeFrom = 6; p.shapeTo = 0;
     p.form = 1.0; p.hold = 0.0;
-    p.waveR = u * WAVE_SPEED;
+    p.waveR = lt * WAVE_SPEED;
     p.waveOn = 1.0;
     return p;
   }
-  // 1 hold cocoon
+  // hold cocoon
   if (lt < S1) {
     p.shapeFrom = 0; p.shapeTo = 0;
     p.hold = 1.0; p.form = 1.0;
     return p;
   }
-  // 2 morph cocoon → moth 1
+  // morph cocoon → mid (sprouting wings)
   if (lt < S2) {
-    float u = lt - S1;
-    p.shapeFrom = 0; p.shapeTo = moth1;
+    p.shapeFrom = 0; p.shapeTo = 1;
     p.form = 1.0; p.hold = 0.0;
-    p.waveR = u * WAVE_SPEED;
+    p.waveR = (lt - S1) * WAVE_SPEED;
     p.waveOn = 1.0;
     return p;
   }
-  // 3 hold moth 1
+  // hold mid
   if (lt < S3) {
-    p.shapeFrom = moth1; p.shapeTo = moth1;
+    p.shapeFrom = 1; p.shapeTo = 1;
     p.hold = 1.0; p.form = 1.0;
     return p;
   }
-  // 4 morph moth 1 → moth 2
+  // morph mid → full moth
   if (lt < S4) {
-    float u = lt - S3;
-    p.shapeFrom = moth1; p.shapeTo = moth2;
+    p.shapeFrom = 1; p.shapeTo = moth;
     p.form = 1.0; p.hold = 0.0;
-    p.waveR = u * WAVE_SPEED;
+    p.waveR = (lt - S3) * WAVE_SPEED;
     p.waveOn = 1.0;
     return p;
   }
-  // 5 hold moth 2
+  // hold moth
   if (lt < S5) {
-    p.shapeFrom = moth2; p.shapeTo = moth2;
+    p.shapeFrom = moth; p.shapeTo = moth;
     p.hold = 1.0; p.form = 1.0;
     return p;
   }
-  // 6 full noisy wipe — center → grid edge, clears everything
+  // full noisy wipe
   if (lt < S6) {
-    float u = lt - S5;
-    p.shapeFrom = moth2; p.shapeTo = 6;
-    p.form = 0.0;
-    p.hold = 0.0;
+    p.shapeFrom = moth; p.shapeTo = 6;
+    p.form = 0.0; p.hold = 0.0;
     p.fullWipe = 1.0;
-    p.waveR = u * WAVE_SPEED;
+    p.waveR = (lt - S5) * WAVE_SPEED;
     p.waveOn = 1.0;
     return p;
   }
-  // 7 brief empty
+  // empty beat
   p.shapeFrom = 6; p.shapeTo = 6;
   p.hold = 0.0; p.form = 1.0;
   p.waveOn = 0.0;
@@ -282,6 +270,10 @@ void cellState(int gx, int gy, Phase ph, out float onAmt, out float limeAmt) {
   // --- ON/OFF ---
   if (ph.hold > 0.5) {
     onAmt = toOn ? 1.0 : 0.0;
+    // Footage often keeps a single lime “heart” at the body center on holds
+    if (toOn && gx == 10 && gy == 10) {
+      limeAmt = 0.85; // set early; final clamp at end
+    }
   } else if (ph.waveOn > 0.5) {
     float passed = 1.0 - smoothstep(ph.waveR - 0.4, ph.waveR + 0.4, d);
 
@@ -339,7 +331,7 @@ void cellState(int gx, int gy, Phase ph, out float onAmt, out float limeAmt) {
   }
 
   onAmt   = clamp(onAmt, 0.0, 1.0);
-  limeAmt = clamp(lime, 0.0, 1.0);
+  limeAmt = clamp(max(limeAmt, lime), 0.0, 1.0);
 }
 
 // ---------------------------------------------------------------------------
@@ -395,7 +387,8 @@ void main() {
   int gx = int(floor(local.x));
   int gy = int(floor(local.y));
   vec2 pCell = fract(local) - 0.5;
-  float dCell = sdRoundedBox(pCell, vec2(0.42), 0.14);
+  // Chubbier cells / tighter gaps — closer to the plastic “dice” look
+  float dCell = sdRoundedBox(pCell, vec2(0.455), 0.16);
 
   bool inGrid = gx >= 0 && gy >= 0 && gx < GRID && gy < GRID
              && abs(uv.x) <= gridHalf + cellPitch * 0.1
