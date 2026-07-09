@@ -16,7 +16,10 @@
 //   iResolution.xy  — viewport size
 //   iTime           — seconds
 
+// highp int is critical on mobile: mediump ints are often only 16-bit,
+// which corrupts columns 16–20 (the rightmost five cells of a 21-wide grid).
 precision highp float;
+precision highp int;
 
 uniform vec2  iResolution;
 uniform float iTime;
@@ -63,51 +66,85 @@ float fill(float d, float aa) {
 }
 
 // ---------------------------------------------------------------------------
-// Bit-packed stages (21 rows, LSB = column 0). Sampled from stable holds.
+// Bit-packed stages — each row is TWO 16-bit halves so mediump-safe:
+//   LO = columns 0..15   (bit i → column i)
+//   HI = columns 16..20  (bit i → column 16+i)
+// Sampled from stable hold frames of the public spinner video.
 // ---------------------------------------------------------------------------
-const uint SH_COCOON[21] = uint[21](
-  0x000000u, 0x000000u, 0x000000u, 0x000000u, 0x000e00u, 0x000a00u, 0x001f00u,
-  0x000e00u, 0x001500u, 0x000e00u, 0x001500u, 0x000e00u, 0x001500u, 0x000e00u,
-  0x001500u, 0x000e00u, 0x000e00u, 0x000000u, 0x000000u, 0x000000u, 0x000000u
+// Helper: row = (hi << 16) | lo  conceptually; we never build the full 21-bit word.
+const uvec2 SH_COCOON[21] = uvec2[21](
+  uvec2(0x0000u,0u), uvec2(0x0000u,0u), uvec2(0x0000u,0u), uvec2(0x0000u,0u),
+  uvec2(0x0e00u,0u), uvec2(0x0a00u,0u), uvec2(0x1f00u,0u), uvec2(0x0e00u,0u),
+  uvec2(0x1500u,0u), uvec2(0x0e00u,0u), uvec2(0x1500u,0u), uvec2(0x0e00u,0u),
+  uvec2(0x1500u,0u), uvec2(0x0e00u,0u), uvec2(0x1500u,0u), uvec2(0x0e00u,0u),
+  uvec2(0x0e00u,0u), uvec2(0x0000u,0u), uvec2(0x0000u,0u), uvec2(0x0000u,0u),
+  uvec2(0x0000u,0u)
 );
-const uint SH_MID[21] = uint[21](
-  0x000000u, 0x000000u, 0x000000u, 0x000e00u, 0x000a00u, 0x010e10u, 0x00d560u,
-  0x005b40u, 0x00aea0u, 0x003580u, 0x001b00u, 0x002e80u, 0x001500u, 0x001b00u,
-  0x000e00u, 0x001500u, 0x000a00u, 0x000e00u, 0x000000u, 0x000000u, 0x000000u
+const uvec2 SH_MID[21] = uvec2[21](
+  uvec2(0x0000u,0u), uvec2(0x0000u,0u), uvec2(0x0000u,0u), uvec2(0x0e00u,0u),
+  uvec2(0x0a00u,0u), uvec2(0x0e10u,0x1u), uvec2(0xd560u,0u), uvec2(0x5b40u,0u),
+  uvec2(0xaea0u,0u), uvec2(0x3580u,0u), uvec2(0x1b00u,0u), uvec2(0x2e80u,0u),
+  uvec2(0x1500u,0u), uvec2(0x1b00u,0u), uvec2(0x0e00u,0u), uvec2(0x1500u,0u),
+  uvec2(0x0a00u,0u), uvec2(0x0e00u,0u), uvec2(0x0000u,0u), uvec2(0x0000u,0u),
+  uvec2(0x0000u,0u)
 );
-const uint SH_MOTH_A[21] = uint[21](
-  0x000000u, 0x000000u, 0x001100u, 0x031118u, 0x078a3cu, 0x02e4e8u, 0x02e4e8u,
-  0x0175d0u, 0x03bbb8u, 0x00eee0u, 0x002e80u, 0x00df60u, 0x00b5a0u, 0x00a4a0u,
-  0x00a4a0u, 0x0064c0u, 0x002080u, 0x004040u, 0x008020u, 0x000000u, 0x000000u
+// 0x010e10 → lo=0x0e10 hi=0x1 (bit 16)
+const uvec2 SH_MOTH_A[21] = uvec2[21](
+  uvec2(0x0000u,0u), uvec2(0x0000u,0u), uvec2(0x1100u,0u), uvec2(0x1118u,0x3u),
+  uvec2(0x8a3cu,0x7u), uvec2(0xe4e8u,0x2u), uvec2(0xe4e8u,0x2u), uvec2(0x75d0u,0x1u),
+  uvec2(0xbbb8u,0x3u), uvec2(0xeee0u,0u), uvec2(0x2e80u,0u), uvec2(0xdf60u,0u),
+  uvec2(0xb5a0u,0u), uvec2(0xa4a0u,0u), uvec2(0xa4a0u,0u), uvec2(0x64c0u,0u),
+  uvec2(0x2080u,0u), uvec2(0x4040u,0u), uvec2(0x8020u,0u), uvec2(0x0000u,0u),
+  uvec2(0x0000u,0u)
 );
-const uint SH_MOTH_B[21] = uint[21](
-  0x000000u, 0x000000u, 0x001100u, 0x001100u, 0x04ca64u, 0x03e4f8u, 0x021508u,
-  0x02fbe8u, 0x013590u, 0x00e4e0u, 0x003f80u, 0x03df78u, 0x02ce68u, 0x055554u,
-  0x01e4f0u, 0x00d560u, 0x004040u, 0x004040u, 0x004040u, 0x000000u, 0x000000u
+// 0x031118 → lo=0x1118 hi=0x3; 0x078a3c → lo=0x8a3c hi=0x7; etc.
+const uvec2 SH_MOTH_B[21] = uvec2[21](
+  uvec2(0x0000u,0u), uvec2(0x0000u,0u), uvec2(0x1100u,0u), uvec2(0x1100u,0u),
+  uvec2(0xca64u,0x4u), uvec2(0xe4f8u,0x3u), uvec2(0x1508u,0x2u), uvec2(0xfbe8u,0x2u),
+  uvec2(0x3590u,0x1u), uvec2(0xe4e0u,0u), uvec2(0x3f80u,0u), uvec2(0xdf78u,0x3u),
+  uvec2(0xce68u,0x2u), uvec2(0x5554u,0x5u), uvec2(0xe4f0u,0x1u), uvec2(0xd560u,0u),
+  uvec2(0x4040u,0u), uvec2(0x4040u,0u), uvec2(0x4040u,0u), uvec2(0x0000u,0u),
+  uvec2(0x0000u,0u)
 );
-const uint SH_MOTH_C[21] = uint[21](
-  0x000000u, 0x000000u, 0x010a10u, 0x030a18u, 0x078a3cu, 0x014450u, 0x0164d0u,
-  0x00bfa0u, 0x01fff0u, 0x01aeb0u, 0x018430u, 0x020a08u, 0x001f00u, 0x0064c0u,
-  0x00e0e0u, 0x014050u, 0x004040u, 0x004040u, 0x002080u, 0x000000u, 0x000000u
+const uvec2 SH_MOTH_C[21] = uvec2[21](
+  uvec2(0x0000u,0u), uvec2(0x0000u,0u), uvec2(0x0a10u,0x1u), uvec2(0x0a18u,0x3u),
+  uvec2(0x8a3cu,0x7u), uvec2(0x4450u,0x1u), uvec2(0x64d0u,0x1u), uvec2(0xbfa0u,0u),
+  uvec2(0xfff0u,0x1u), uvec2(0xaeb0u,0x1u), uvec2(0x8430u,0x1u), uvec2(0x0a08u,0x2u),
+  uvec2(0x1f00u,0u), uvec2(0x64c0u,0u), uvec2(0xe0e0u,0u), uvec2(0x4050u,0x1u),
+  uvec2(0x4040u,0u), uvec2(0x4040u,0u), uvec2(0x2080u,0u), uvec2(0x0000u,0u),
+  uvec2(0x0000u,0u)
 );
-const uint SH_MOTH_D[21] = uint[21](
-  0x000000u, 0x000000u, 0x002080u, 0x021108u, 0x011110u, 0x018a30u, 0x07c47cu,
-  0x02d568u, 0x03eef8u, 0x00d560u, 0x00d560u, 0x012e90u, 0x00f5e0u, 0x0164d0u,
-  0x014050u, 0x01a0b0u, 0x008020u, 0x018030u, 0x008020u, 0x000000u, 0x000000u
+const uvec2 SH_MOTH_D[21] = uvec2[21](
+  uvec2(0x0000u,0u), uvec2(0x0000u,0u), uvec2(0x2080u,0u), uvec2(0x1108u,0x2u),
+  uvec2(0x1110u,0x1u), uvec2(0x8a30u,0x1u), uvec2(0xc47cu,0x7u), uvec2(0xd568u,0x2u),
+  uvec2(0xeef8u,0x3u), uvec2(0xd560u,0u), uvec2(0xd560u,0u), uvec2(0x2e90u,0x1u),
+  uvec2(0xf5e0u,0u), uvec2(0x64d0u,0x1u), uvec2(0x4050u,0x1u), uvec2(0xa0b0u,0x1u),
+  uvec2(0x8020u,0u), uvec2(0x8030u,0x1u), uvec2(0x8020u,0u), uvec2(0x0000u,0u),
+  uvec2(0x0000u,0u)
 );
+
+// Test column gx in a lo/hi packed row (gx in 0..20).
+bool rowBit(uvec2 row, int gx) {
+  // Only shift within 0..15 — safe even if a driver ignores highp.
+  if (gx < 16) {
+    return ((row.x >> uint(gx)) & 1u) == 1u;
+  }
+  int h = gx - 16; // 0..4
+  return ((row.y >> uint(h)) & 1u) == 1u;
+}
 
 // 0 cocoon, 1 mid, 2-5 moths, 6 empty
 bool shapeBit(int s, int gx, int gy) {
   if (gx < 0 || gy < 0 || gx >= GRID || gy >= GRID) return false;
-  uint bits = 0u;
-  if      (s == 0) bits = SH_COCOON[gy];
-  else if (s == 1) bits = SH_MID[gy];
-  else if (s == 2) bits = SH_MOTH_A[gy];
-  else if (s == 3) bits = SH_MOTH_B[gy];
-  else if (s == 4) bits = SH_MOTH_C[gy];
-  else if (s == 5) bits = SH_MOTH_D[gy];
+  uvec2 row = uvec2(0u);
+  if      (s == 0) row = SH_COCOON[gy];
+  else if (s == 1) row = SH_MID[gy];
+  else if (s == 2) row = SH_MOTH_A[gy];
+  else if (s == 3) row = SH_MOTH_B[gy];
+  else if (s == 4) row = SH_MOTH_C[gy];
+  else if (s == 5) row = SH_MOTH_D[gy];
   else return false;
-  return ((bits >> uint(gx)) & 1u) == 1u;
+  return rowBit(row, gx);
 }
 
 // Discrete distance (in cells) from (gx,gy) to nearest ON bit of shape s.
@@ -384,8 +421,9 @@ void main() {
   col = mix(col, COL_MARK, marks * 0.9);
 
   vec2 local = uv / cellPitch + vec2(float(GRID) * 0.5);
-  int gx = int(floor(local.x));
-  int gy = int(floor(local.y));
+  // tiny epsilon avoids mobile floor() landing on the wrong cell at edges
+  int gx = int(floor(local.x + 1e-4));
+  int gy = int(floor(local.y + 1e-4));
   vec2 pCell = fract(local) - 0.5;
   // Chubbier cells / tighter gaps — closer to the plastic “dice” look
   float dCell = sdRoundedBox(pCell, vec2(0.455), 0.16);
