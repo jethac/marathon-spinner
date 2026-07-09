@@ -1,0 +1,11 @@
+# Local / analysis artifacts
+frames/
+*.mp4
+*.png
+!**/favicon*.png
+_*.png
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marathon Spinner — Jetha Chan + Grok 4.5 reconstruction of Abby Welsh’s work</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- LEFT: preview -->
+    <section class="preview">
+      <header class="preview-top">
+        <div class="brand-line">
+          <span class="dot"></span>
+          <span class="title">marathon-spinner</span>
+          <span class="badge">WebGL2</span>
+        </div>
+        <div class="transport">
+          <label class="speed">
+            <span>Speed</span>
+            <input id="speed" type="range" min="0.1" max="3" step="0.05" value="1" />
+            <strong id="speedVal">1.00×</strong>
+          </label>
+          <button id="btnPause" type="button">Pause</button>
+          <button id="btnReset" type="button">Reset</button>
+          <span class="fps" title="Frames per second"><span id="fps">--</span> fps</span>
+        </div>
+      </header>
+
+      <div class="stage">
+        <canvas id="c" width="640" height="640"></canvas>
+      </div>
+
+      <footer class="hud">
+        <p class="hud-credit">
+          Reconstruction by
+          <a href="https://x.com/jetha" target="_blank" rel="noopener noreferrer">Jetha Chan (@jetha)</a>
+          ·
+          <a href="https://grok.com" target="_blank" rel="noopener noreferrer">Grok&nbsp;4.5</a>
+          · of
+          <a href="https://x.com/DubThinkDev" target="_blank" rel="noopener noreferrer">Abby Welsh (@DubThinkDev)</a>’s work
+        </p>
+        <span class="hud-meta">
+          <span id="hudTime">0.0s</span>
+        </span>
+      </footer>
+    </section>
+
+    <!-- RIGHT: sidebar -->
+    <aside class="sidebar">
+      <nav class="tabs" role="tablist">
+        <button class="tab active" data-tab="about" type="button" role="tab" aria-selected="true">About</button>
+        <button class="tab" data-tab="shader" type="button" role="tab" aria-selected="false">Shader</button>
+      </nav>
+
+      <div class="tab-panels">
+        <!-- ABOUT -->
+        <div id="panel-about" class="panel active" role="tabpanel">
+          <div class="panel-scroll">
+            <h1>Marathon Spinner</h1>
+            <p class="lede">
+              A reconstruction by <strong>Jetha Chan (@jetha)</strong> driving
+              <strong>Grok&nbsp;4.5</strong>, of
+              <a href="https://x.com/DubThinkDev" target="_blank" rel="noopener noreferrer">Abby Welsh</a>’s
+              (<strong>@DubThinkDev</strong>) procedural loading-spinner shader — work that has to run
+              <strong>before the engine can load textures or video</strong>.
+            </p>
+
+            <section class="block credit">
+              <h2>Credit</h2>
+              <p>
+                <strong>This is not Abby’s shipping shader.</strong>
+                It is a reconstruction by <strong>Jetha Chan (@jetha)</strong>, authored with
+                <strong>Grok&nbsp;4.5</strong>, reverse-engineered from her public posts and video.
+              </p>
+              <p>
+                Source work by
+                <a href="https://x.com/DubThinkDev" target="_blank" rel="noopener noreferrer">Abby Welsh</a>
+                (<strong>@DubThinkDev</strong>).
+                Moth / stage designs by <strong>Wolfie Davis</strong> — encoded as bits
+                in a few integers.
+              </p>
+              <p class="tweet-ref">
+                Technique follow-up:
+                <a href="https://x.com/DubThinkDev/status/2074987002307744255" target="_blank" rel="noopener noreferrer">x.com/DubThinkDev/status/2074987002307744255</a>
+              </p>
+
+              <div class="tweet-embed">
+                <blockquote class="twitter-tweet" data-theme="dark" data-dnt="true">
+                  <p lang="en" dir="ltr">
+                    Fun fact: the Marathon spinner is actually a hand-coded shader! It has to
+                    display before the engine loads any textures or videos, so it&#39;s entirely
+                    procedurally animated and rendered by a shader I wrote for it using SDFs,
+                    procedural noise, and a pile of math for the animation :)
+                  </p>
+                  &mdash; Abby Welsh (@DubThinkDev)
+                  <a href="https://twitter.com/DubThinkDev/status/2074962274817876425?ref_src=twsrc%5Etfw">July 8, 2026</a>
+                </blockquote>
+              </div>
+            </section>
+
+            <section class="block">
+              <h2>What this is</h2>
+              <p>
+                A from-scratch recreation by <strong>Jetha Chan (@jetha)</strong> using
+                <strong>Grok&nbsp;4.5</strong>, driven by Abby’s public footage, her technique
+                write-up, and iterative visual fixes. Loop:
+                <em>cocoon → moth&nbsp;1 → moth&nbsp;2 → full noisy center-to-edge wipe</em>.
+                Animation lives in the fragment shader
+                (<code>iTime</code> / <code>iResolution</code> only — Shadertoy-style).
+              </p>
+            </section>
+
+            <section class="block">
+              <h2>What Grok got right</h2>
+              <ul class="checklist good">
+                <li>
+                  <strong>Procedural mandate</strong> — no textures; pure math so it can
+                  boot before assets exist.
+                </li>
+                <li>
+                  <strong>2D SDFs for “pixels”</strong> — rounded rects, registration marks,
+                  AA coverage (Abby + Book of Shaders / Íñigo Quílez lineage).
+                </li>
+                <li>
+                  <strong>Bit-packed moths</strong> — 21×21 stages sampled from stable hold
+                  frames and stored as <code>uint</code> row masks (Wolfie’s designs).
+                </li>
+                <li>
+                  <strong>Per-cell decision</strong> — position + shape + time + noise,
+                  not a scripted sprite sheet.
+                </li>
+                <li>
+                  <strong>Center-out arrival</strong> — new lit pixels form at the center
+                  and ripple outward to build the glyph (after rewatching footage).
+                </li>
+                <li>
+                  <strong>Lime as a wave front</strong> — energy rides an expanding ring;
+                  full on the silhouette, weaker past the glyph bounds.
+                </li>
+                <li>
+                  <strong>Timeline in the shader</strong> — form cocoon → mid → moth →
+                  dissolve → empty; moth variants cycle. JS only feeds time.
+                </li>
+              </ul>
+            </section>
+
+            <section class="block">
+              <h2>What Grok got wrong</h2>
+              <ul class="checklist bad">
+                <li>
+                  <strong>Vertical lime “scan line”</strong> — first pass treated lime as a
+                  top→bottom wipe. Footage (and Abby’s model) is a
+                  <em>radial</em> ripple from the grid center.
+                </li>
+                <li>
+                  <strong>Starting mid-hold</strong> — opened on a fully formed moth.
+                  Real flow starts empty and grows the first glyph from the center.
+                </li>
+                <li>
+                  <strong>Falloff extremes</strong> — empty-grid lime was either a full
+                  unmasked ring or crushed to almost nothing. Needed a ~2–3 cell halo
+                  past the glyph, not a hard mask and not a free disc.
+                </li>
+                <li>
+                  <strong>Fake wipe sparkles</strong> — invented 2×2 corner lime (and
+                  earlier full edge greens) after dissolve. Looked “registration-y”
+                  but wasn’t faithful; removed.
+                </li>
+                <li>
+                  <strong>JS stage machine</strong> — early versions drove shape locks and
+                  phases from JavaScript. Reworked so the timeline is pure GLSL.
+                </li>
+                <li>
+                  <strong>Not pixel-perfect</strong> — bitmasks are sampled from compressed
+                  video, not extracted from Bungie’s binaries. Close, not identical.
+                </li>
+              </ul>
+            </section>
+
+            <section class="block">
+              <h2>How to poke it</h2>
+              <p>
+                Open the <strong>Shader</strong> tab. Edit the GLSL, hit
+                <kbd>Compile</kbd> (or <kbd>Ctrl</kbd>+<kbd>Enter</kbd>). Errors show
+                under the editor without killing the last good program.
+              </p>
+            </section>
+
+            <p class="fineprint">
+              Reconstruction by Jetha Chan (@jetha) with Grok&nbsp;4.5, of Abby Welsh’s
+              (@DubThinkDev) work. Built for learning shaders — not official shipping code.
+            </p>
+          </div>
+        </div>
+
+        <!-- SHADER -->
+        <div id="panel-shader" class="panel" role="tabpanel" hidden>
+          <div class="shader-toolbar">
+            <button id="btnCompile" type="button" class="primary">Compile</button>
+            <button id="btnRevert" type="button">Revert</button>
+            <span id="compileStatus" class="compile-status" aria-live="polite">ready</span>
+          </div>
+          <textarea
+            id="shaderEditor"
+            spellcheck="false"
+            wrap="off"
+            aria-label="Fragment shader source"
+          ></textarea>
+          <pre id="compileLog" class="compile-log" hidden></pre>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+  <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+</body>
+</html>
