@@ -51,6 +51,7 @@
     <aside class="sidebar">
       <nav class="tabs" role="tablist">
         <button class="tab active" data-tab="about" type="button" role="tab" aria-selected="true">About</button>
+        <button class="tab" data-tab="worklog" type="button" role="tab" aria-selected="false">Grok’s worklog</button>
         <button class="tab" data-tab="shader" type="button" role="tab" aria-selected="false">Shader</button>
       </nav>
 
@@ -114,84 +115,206 @@
             </section>
 
             <section class="block">
-              <h2>What Grok got right</h2>
-              <ul class="checklist good">
-                <li>
-                  <strong>Procedural mandate</strong> — no textures; pure math so it can
-                  boot before assets exist.
-                </li>
-                <li>
-                  <strong>2D SDFs for “pixels”</strong> — rounded rects, registration marks,
-                  AA coverage (Abby + Book of Shaders / Íñigo Quílez lineage).
-                </li>
-                <li>
-                  <strong>Bit-packed moths</strong> — 21×21 stages sampled from stable hold
-                  frames and stored as <code>uint</code> row masks (Wolfie’s designs).
-                </li>
-                <li>
-                  <strong>Per-cell decision</strong> — position + shape + time + noise,
-                  not a scripted sprite sheet.
-                </li>
-                <li>
-                  <strong>Center-out arrival</strong> — new lit pixels form at the center
-                  and ripple outward to build the glyph (after rewatching footage).
-                </li>
-                <li>
-                  <strong>Lime as a wave front</strong> — energy rides an expanding ring;
-                  full on the silhouette, weaker past the glyph bounds.
-                </li>
-                <li>
-                  <strong>Timeline in the shader</strong> — form cocoon → mid → moth →
-                  dissolve → empty; moth variants cycle. JS only feeds time.
-                </li>
-              </ul>
-            </section>
-
-            <section class="block">
-              <h2>What Grok got wrong</h2>
-              <ul class="checklist bad">
-                <li>
-                  <strong>Vertical lime “scan line”</strong> — first pass treated lime as a
-                  top→bottom wipe. Footage (and Abby’s model) is a
-                  <em>radial</em> ripple from the grid center.
-                </li>
-                <li>
-                  <strong>Starting mid-hold</strong> — opened on a fully formed moth.
-                  Real flow starts empty and grows the first glyph from the center.
-                </li>
-                <li>
-                  <strong>Falloff extremes</strong> — empty-grid lime was either a full
-                  unmasked ring or crushed to almost nothing. Needed a ~2–3 cell halo
-                  past the glyph, not a hard mask and not a free disc.
-                </li>
-                <li>
-                  <strong>Fake wipe sparkles</strong> — invented 2×2 corner lime (and
-                  earlier full edge greens) after dissolve. Looked “registration-y”
-                  but wasn’t faithful; removed.
-                </li>
-                <li>
-                  <strong>JS stage machine</strong> — early versions drove shape locks and
-                  phases from JavaScript. Reworked so the timeline is pure GLSL.
-                </li>
-                <li>
-                  <strong>Not pixel-perfect</strong> — bitmasks are sampled from compressed
-                  video, not extracted from Bungie’s binaries. Close, not identical.
-                </li>
-              </ul>
-            </section>
-
-            <section class="block">
               <h2>How to poke it</h2>
               <p>
                 Open the <strong>Shader</strong> tab. Edit the GLSL, hit
                 <kbd>Compile</kbd> (or <kbd>Ctrl</kbd>+<kbd>Enter</kbd>). Errors show
                 under the editor without killing the last good program.
               </p>
+              <p>
+                For the reconstruction story — wrong turns included — see
+                <strong>Grok’s worklog</strong>.
+              </p>
             </section>
 
             <p class="fineprint">
               Reconstruction by Jetha Chan (@jetha) with Grok&nbsp;4.5, of Abby Welsh’s
               (@DubThinkDev) work. Built for learning shaders — not official shipping code.
+            </p>
+          </div>
+        </div>
+
+        <!-- WORKLOG -->
+        <div id="panel-worklog" class="panel" role="tabpanel" hidden>
+          <div class="panel-scroll">
+            <h1>Grok’s worklog</h1>
+            <p class="lede">
+              Abridged session notes from building this reconstruction with
+              <strong>Grok&nbsp;4.5</strong> (driven by Jetha Chan). Not a raw chat dump —
+              the arc of what was tried, fixed, and shipped.
+            </p>
+
+            <nav class="worklog-toc" aria-label="Session turns">
+              <h2>Turns</h2>
+              <ol>
+                <li>
+                  <a href="#wl-1"><span class="toc-n">1</span>
+                    <span class="toc-t">Brief: rebuild the spinner from Abby’s tweet + video</span></a>
+                </li>
+                <li>
+                  <a href="#wl-2"><span class="toc-n">2</span>
+                    <span class="toc-t">Radial ripple, not a top-down scan</span></a>
+                </li>
+                <li>
+                  <a href="#wl-3"><span class="toc-n">3</span>
+                    <span class="toc-t">Arrival model + lime past the glyph</span></a>
+                </li>
+                <li>
+                  <a href="#wl-4"><span class="toc-n">4</span>
+                    <span class="toc-t">Shadertoy host: iTime only, live editor</span></a>
+                </li>
+                <li>
+                  <a href="#wl-5"><span class="toc-n">5</span>
+                    <span class="toc-t">Falloff, wipes, and “start empty”</span></a>
+                </li>
+                <li>
+                  <a href="#wl-6"><span class="toc-n">6</span>
+                    <span class="toc-t">Credits, shipping, Pages + Cloudflare DNS/HTTPS</span></a>
+                </li>
+                <li>
+                  <a href="#wl-7"><span class="toc-n">7</span>
+                    <span class="toc-t">Stage order: cocoon → mid → moth → wipe</span></a>
+                </li>
+                <li class="toc-current">
+                  <a href="#wl-8"><span class="toc-n">8</span>
+                    <span class="toc-t">Jetha reports a visual artifact; Grok one-shots the fix</span></a>
+                  <span class="toc-badge">latest</span>
+                </li>
+              </ol>
+            </nav>
+
+            <article class="worklog" id="wl-1">
+              <header>
+                <span class="wl-turn">Turn 1</span>
+                <h2>Brief: rebuild the spinner from Abby’s tweet + video</h2>
+              </header>
+              <p>
+                Pulled
+                <a href="https://x.com/DubThinkDev/status/2074962274817876425" target="_blank" rel="noopener noreferrer">Abby’s post</a>
+                and the attached clip. Goal: a procedural WebGL recreation using
+                SDFs, bit-packed stages, and per-cell on/off from position + shape + time + noise —
+                plus a simple tester page.
+              </p>
+              <p>
+                Sampled the video into a <strong>21×21</strong> grid, extracted cocoon / mid / moth
+                bitmasks, built rounded-rect cells and registration marks, and stood up a first
+                shader host. Early animation “worked” but wasn’t faithful yet.
+              </p>
+            </article>
+
+            <article class="worklog" id="wl-2">
+              <header>
+                <span class="wl-turn">Turn 2</span>
+                <h2>Radial ripple, not a top-down scan</h2>
+              </header>
+              <p>
+                First lime pass was a <strong>vertical scan band</strong>. Wrong. Frame analysis
+                showed lime mean radius growing from center (~6 cells/s, band width ~2.3).
+                Rewrote form / dissolve as a center-out ring.
+              </p>
+            </article>
+
+            <article class="worklog" id="wl-3">
+              <header>
+                <span class="wl-turn">Turn 3</span>
+                <h2>Arrival model + lime past the glyph</h2>
+              </header>
+              <p>
+                Clarified the intended model: new pixels <strong>arrive at the center</strong> and
+                ripple out to form the pattern. Lime rides that front on the silhouette and can
+                leak past the glyph, losing energy toward empty grid / boundary —
+                not a free disc, not a hard mask.
+              </p>
+              <p>
+                Restructured toward a Shadertoy style: almost everything in the fragment shader;
+                JS only feeds time and resolution.
+              </p>
+            </article>
+
+            <article class="worklog" id="wl-4">
+              <header>
+                <span class="wl-turn">Turn 4</span>
+                <h2>Shadertoy host: iTime only, live editor</h2>
+              </header>
+              <p>
+                Split <code>shader.frag</code> from a thin <code>main.js</code> host. Sidebar UI
+                with About + live Shader tab (debounced recompile, keep last good program on error).
+                Timeline lives entirely in GLSL.
+              </p>
+            </article>
+
+            <article class="worklog" id="wl-5">
+              <header>
+                <span class="wl-turn">Turn 5</span>
+                <h2>Falloff, wipes, and “start empty”</h2>
+              </header>
+              <p>
+                Iterated lime falloff (too soft → too hard → middle ground). Removed invented
+                corner / edge wipe sparkles that looked “registration-y” but weren’t right.
+                Stopped opening mid-hold on a full moth — <strong>t&nbsp;=&nbsp;0 is empty</strong>,
+                then cocoon forms from the center.
+              </p>
+              <p>
+                End of loop became a <strong>full noisy center-to-edge wipe</strong> that clears
+                the whole grid, not only the silhouette.
+              </p>
+            </article>
+
+            <article class="worklog" id="wl-6">
+              <header>
+                <span class="wl-turn">Turn 6</span>
+                <h2>Credits, shipping, Pages + Cloudflare DNS/HTTPS</h2>
+              </header>
+              <p>
+                Explicit credit: reconstruction by <strong>Jetha Chan (@jetha)</strong> driving
+                Grok&nbsp;4.5, of Abby Welsh’s (@DubThinkDev) work — not shipping source.
+                Footer links to both X profiles and grok.com; tweet embed in About.
+              </p>
+              <p>
+                Shipped MIT on GitHub, GitHub Pages, custom domain
+                <code>marathon-spinner.jethachan.net</code>. Used Bitwarden Secrets CLI
+                (<code>bws</code>) for the Cloudflare API token, created the CNAME, proxied for
+                TLS, zone Always HTTPS / HSTS.
+              </p>
+            </article>
+
+            <article class="worklog" id="wl-7">
+              <header>
+                <span class="wl-turn">Turn 7</span>
+                <h2>Stage order: cocoon → mid → moth → wipe</h2>
+              </header>
+              <p>
+                Bitmasks already matched sampled holds (majority vote vs video). The “slightly wrong”
+                feel was mostly <strong>sequence</strong>: morphing moth→moth skipped the mid
+                wing-sprout stage. Restored footage order and chubbier cells; center lime “heart”
+                on holds.
+              </p>
+            </article>
+
+            <article class="worklog wl-latest" id="wl-8">
+              <header>
+                <span class="wl-turn">Turn 8 · latest</span>
+                <h2>Jetha reports a visual artifact; Grok one-shots the fix</h2>
+              </header>
+              <p>
+                On phone, the <strong>rightmost five columns</strong> looked horizontally scrambled.
+                Desktops were fine.
+              </p>
+              <p>
+                Diagnosis: mobile fragment shaders often default <code>int</code>/<code>uint</code>
+                to <strong>mediump (~16 bits)</strong>. A 21-wide grid stores columns 16–20 in bits
+                past 16 — exactly those five columns. Classic GLSL ES trap.
+              </p>
+              <p>
+                Fix in one pass: force <code>precision highp int</code>, and split each row mask into
+                a <code>uvec2</code> lo/hi pair (cols 0–15 / 16–20) so shifts never leave the
+                16-bit-safe range. Also a tiny epsilon on cell <code>floor()</code>. Shipped.
+              </p>
+            </article>
+
+            <p class="fineprint">
+              Abridged for reading. Full tooling: WebGL2, frame sampling, Cloudflare API via
+              <code>bws</code>, GitHub Actions Pages.
             </p>
           </div>
         </div>

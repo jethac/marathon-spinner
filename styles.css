@@ -202,12 +202,13 @@ a:hover { text-decoration: underline; }
   border: none;
   border-bottom: 2px solid transparent;
   color: var(--muted);
-  padding: 0.7rem 0.5rem;
-  font-size: 0.72rem;
+  padding: 0.7rem 0.35rem;
+  font-size: 0.65rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
+  white-space: nowrap;
 }
 .tab:hover { color: var(--text); }
 .tab.active {
@@ -303,30 +304,123 @@ a:hover { text-decoration: underline; }
   color: var(--lime);
 }
 
-.checklist {
+/* Worklog TOC + entries */
+.worklog-toc {
+  margin: 0 0 1.5rem;
+  padding: 0.85rem 0.9rem 1rem;
+  background: #0e0e12;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.worklog-toc h2 {
+  margin-bottom: 0.65rem;
+}
+.worklog-toc ol {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
 }
-.checklist li {
-  position: relative;
-  padding-left: 1.15rem;
-  font-size: 0.84rem;
-  line-height: 1.45;
+.worklog-toc li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
 }
-.checklist li::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0.45em;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+.worklog-toc a {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  flex: 1;
+  min-width: 0;
+  color: #b4b4bc;
+  text-decoration: none;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  padding: 0.35rem 0.4rem;
+  border-radius: 4px;
 }
-.checklist.good li::before { background: var(--good); box-shadow: 0 0 6px rgba(74,222,128,0.4); }
-.checklist.bad li::before { background: var(--bad); box-shadow: 0 0 6px rgba(248,113,113,0.35); }
-.checklist strong { color: #ececf0; font-weight: 600; }
+.worklog-toc a:hover {
+  background: rgba(200, 255, 0, 0.06);
+  color: #e4e4e7;
+  text-decoration: none;
+}
+.worklog-toc .toc-n {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--lime-dim);
+  border: 1px solid #3a4010;
+  border-radius: 3px;
+  background: #14160c;
+}
+.worklog-toc .toc-t { min-width: 0; }
+.worklog-toc li.toc-current a {
+  color: #f4f4f5;
+  background: rgba(200, 255, 0, 0.08);
+  border: 1px solid rgba(200, 255, 0, 0.2);
+}
+.worklog-toc li.toc-current .toc-n {
+  color: #111;
+  background: var(--lime);
+  border-color: var(--lime);
+}
+.toc-badge {
+  flex-shrink: 0;
+  align-self: center;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #111;
+  background: var(--lime);
+  padding: 0.15rem 0.35rem;
+  border-radius: 3px;
+}
+
+.worklog {
+  margin-bottom: 1.35rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid #1f1f24;
+  scroll-margin-top: 0.75rem;
+}
+.worklog:last-of-type { border-bottom: none; }
+.worklog header {
+  margin-bottom: 0.55rem;
+}
+.worklog .wl-turn {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lime-dim);
+  margin-bottom: 0.25rem;
+}
+.worklog h2 {
+  font-size: 0.95rem !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+  color: #f0f0f4 !important;
+  font-weight: 650 !important;
+  margin-bottom: 0 !important;
+  line-height: 1.3;
+}
+.worklog p + p { margin-top: 0.5rem; }
+.worklog.wl-latest {
+  padding: 0.85rem 0.9rem 1rem;
+  background: linear-gradient(135deg, #14160c 0%, #121214 70%);
+  border: 1px solid #2a3010;
+  border-radius: 8px;
+  border-bottom: 1px solid #2a3010;
+}
 
 .fineprint {
   margin-top: 0.5rem;
